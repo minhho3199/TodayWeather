@@ -67,7 +67,7 @@ public class ForecastFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(
                 new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        getForecastWeatherInformationByCityName("london");
+        getForecastWeatherInformationByLatLong();
         return itemView;
     }
 

@@ -86,7 +86,7 @@ public class TodayWeatherFragment extends Fragment {
         weather_panel = itemView.findViewById(R.id.weather_panel);
         details = itemView.findViewById(R.id.details);
         loading = itemView.findViewById(R.id.loading);
-        getWeatherInformationByCity("london");
+        getWeatherInformationByLatLong();
         return itemView;
     }
 
