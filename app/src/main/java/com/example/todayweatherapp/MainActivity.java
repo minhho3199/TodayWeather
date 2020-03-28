@@ -64,12 +64,11 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager viewPager;
     private CoordinatorLayout coordinatorLayout;
     private FusedLocationProviderClient fusedLocationProviderClient;
-    private List<String> cityList;
     private LocationCallback locationCallback;
     private LocationRequest locationRequest;
     private SearchView searchView;
+    private List<String> cityList;
     private ArrayAdapter<String> arrayAdapter;
-    private List<String> searchResults;
     private ListView search_list;
     @Override
 
@@ -79,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         coordinatorLayout = findViewById(R.id.root_view);
         toolbar = findViewById(R.id.toolbar);
         search_list = findViewById(R.id.search_list);
-        searchResults = new ArrayList<>();
+        cityList = new ArrayList<>();
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         Dexter.withActivity(this)
@@ -105,15 +104,14 @@ public class MainActivity extends AppCompatActivity {
                 }).check();
         checkForLocation();
         new SearchSuggestionsList().execute();
-        arrayAdapter = new ArrayAdapter<String>(this, R.layout.list_item, searchResults);
         search_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                Log.i("item", search_list.getAdapter().getItem(position).toString());
+                searchView.setQuery((CharSequence) parent.getItemAtPosition(position), false);
             }
         });
-    }
+
+}
 
     @Override
     public void onBackPressed() {
@@ -177,53 +175,45 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.forecast, menu);
-        MenuItem menuItem = menu.findItem(R.id.action_search);
-        searchView = (SearchView) menuItem.getActionView();
-        searchView.setIconifiedByDefault(true);
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        final MenuItem menuItem = menu.findItem(R.id.action_search);
+        menuItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
             @Override
-            public boolean onQueryTextSubmit(String query) {
-                TodayWeatherFragment todayWeatherFragment = (TodayWeatherFragment) getSupportFragmentManager().findFragmentByTag(
-                        "android:switcher:" + R.id.view_pager + ":" + 0);
-                ForecastFragment forecastFragment = (ForecastFragment) getSupportFragmentManager().findFragmentByTag(
-                        "android:switcher:" + R.id.view_pager + ":" + 1);
-                todayWeatherFragment.getWeatherInformationByCity(query);
-                forecastFragment.getForecastWeatherInformationByCityName(query);
-                searchView.clearFocus();
-                return false;
-            }
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                searchResults.clear();
-                for(String search : cityList) {
-                    if(search.toLowerCase().contains(newText.toLowerCase())) {
-                        searchResults.add(search);
-                    }
+            public boolean onMenuItemActionExpand(MenuItem item) {
+                if(search_list.getVisibility() == View.GONE) {
+                    search_list.setVisibility(View.VISIBLE);
                 }
-//                arrayAdapter = new ArrayAdapter<>(MainActivity.this, R.layout.list_item, searchResults);
-                search_list.setAdapter(arrayAdapter);
-                return false;
-            }
-        });
-        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
-            @Override
-            public boolean onClose() {
-                search_list.setVisibility(View.INVISIBLE);
+                searchView = (SearchView) menuItem.getActionView();
+                searchView.setIconifiedByDefault(true);
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        TodayWeatherFragment todayWeatherFragment = (TodayWeatherFragment) getSupportFragmentManager().findFragmentByTag(
+                                "android:switcher:" + R.id.view_pager + ":" + 0);
+                        ForecastFragment forecastFragment = (ForecastFragment) getSupportFragmentManager().findFragmentByTag(
+                                "android:switcher:" + R.id.view_pager + ":" + 1);
+                        todayWeatherFragment.getWeatherInformationByCity(query);
+                        forecastFragment.getForecastWeatherInformationByCityName(query);
+                        searchView.clearFocus();
+                        return false;
+                    }
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        arrayAdapter = new ArrayAdapter<>(MainActivity.this, R.layout.list_item, cityList);
+                        search_list.setAdapter(arrayAdapter);
+                        arrayAdapter.getFilter().filter(newText);
+                        return false;
+                    }
+                });
                 return true;
-            }
-        });
-        searchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
-            @Override
-            public boolean onSuggestionSelect(int position) {
-                return false;
             }
 
             @Override
-            public boolean onSuggestionClick(int position) {
-                searchView.setQuery(search_list.getAdapter().getItem(position).toString(), false);
+            public boolean onMenuItemActionCollapse(MenuItem item) {
+                search_list.setVisibility(View.GONE);
                 return true;
             }
         });
+
         return true;
     }
 
