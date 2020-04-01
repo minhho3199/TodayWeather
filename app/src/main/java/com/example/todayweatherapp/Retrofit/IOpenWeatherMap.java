@@ -9,6 +9,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 public interface IOpenWeatherMap {
+    //Observables are sources of data, to receive this data you must subscribe to it
     @GET("weather")
     Observable<WeatherResult> getWeatherByLatLong(@Query("lat") String lat,
                                                   @Query("lon") String lon,

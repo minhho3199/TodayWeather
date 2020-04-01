@@ -6,9 +6,6 @@ public class WeatherList {
     private int dt;
     private Main main;
     private List<Weather> weather;
-    private Wind wind;
-    private Sys sys;
-    private String dt_txt;
 
     public WeatherList() {
     }
@@ -37,29 +34,4 @@ public class WeatherList {
         this.weather = weather;
     }
 
-
-    public Wind getWind() {
-        return wind;
-    }
-
-    public void setWind(Wind wind) {
-        this.wind = wind;
-    }
-
-
-    public Sys getSys() {
-        return sys;
-    }
-
-    public void setSys(Sys sys) {
-        this.sys = sys;
-    }
-
-    public String getDt_txt() {
-        return dt_txt;
-    }
-
-    public void setDt_txt(String dt_txt) {
-        this.dt_txt = dt_txt;
-    }
 }

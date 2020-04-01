@@ -1,21 +1,12 @@
 package com.example.todayweatherapp.Model;
 
 public class Sys {
-    private int type;
     private int id;
     private String country;
     private int sunrise;
     private int sunset;
 
     public Sys() {
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
     }
 
     public int getId() {

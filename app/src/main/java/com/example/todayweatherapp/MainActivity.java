@@ -16,6 +16,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
@@ -70,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private List<String> cityList;
     private ArrayAdapter<String> arrayAdapter;
     private ListView search_list;
+
     @Override
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,8 +81,11 @@ public class MainActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.toolbar);
         search_list = findViewById(R.id.search_list);
         cityList = new ArrayList<>();
+        //Set the action bar to be the custom toolbar that we created
         setSupportActionBar(toolbar);
+        // This removes the back arrow on the action bar
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        //An android library that manages runtime permissions
         Dexter.withActivity(this)
                 .withPermissions(Manifest.permission.ACCESS_COARSE_LOCATION,
                         Manifest.permission.ACCESS_FINE_LOCATION)
@@ -96,14 +101,42 @@ public class MainActivity extends AppCompatActivity {
                                     locationRequest,
                                     locationCallback, Looper.myLooper());
                         }
+                        if (report.isAnyPermissionPermanentlyDenied()) {
+                            final AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
+                            alertDialog.setTitle("Need Permissions");
+                            alertDialog.setMessage("This app needs permission to use this feature. You can grant them in app settings.")
+                                    .setCancelable(false)
+                                    .setPositiveButton("Go to Settings", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.cancel();
+                                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                            Uri uri = Uri.fromParts("package", getPackageName(), null);
+                                            intent.setData(uri);
+                                            startActivityForResult(intent, 101);
+                                        }
+                                    })
+                                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.cancel();
+                                        }
+                                    });
+                            final AlertDialog alert = alertDialog.create();
+                            alert.show();
+                        }
                     }
+
                     @Override
                     public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {
                         Snackbar.make(coordinatorLayout, "Permission Denied", Snackbar.LENGTH_LONG).show();
                     }
                 }).check();
+        //Check if GPS is enabled on the device
         checkForLocation();
+        //Executes the asynctask of loading the list of cities in the background
         new SearchSuggestionsList().execute();
+        //When the user clicks on a city in the list, the city name will be set on the searchview
         search_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -111,12 +144,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-}
-
-    @Override
-    public void onBackPressed() {
-        search_list.setVisibility(View.INVISIBLE);
-        super.onBackPressed();
     }
 
     private void checkForLocation() {
@@ -129,8 +156,8 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-        }
-    })
+                        }
+                    })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -142,6 +169,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //Used for receiving notifications from the FusedLocationProviderApi
+    // when the device location has changed or can no longer be determined.
     private void buildLocationCallback() {
         locationCallback = new LocationCallback() {
             @Override
@@ -157,6 +186,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //Request a quality of service for location updates from the FusedLocationProviderAPI
+    // The app requires high accuracy location
     private void buildLocationRequest() {
         locationRequest = new LocationRequest();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -176,10 +207,11 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.forecast, menu);
         final MenuItem menuItem = menu.findItem(R.id.action_search);
+        //This makes sure the list disappears when the searchview is not expanded
         menuItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
             @Override
             public boolean onMenuItemActionExpand(MenuItem item) {
-                if(search_list.getVisibility() == View.GONE) {
+                if (search_list.getVisibility() == View.GONE) {
                     search_list.setVisibility(View.VISIBLE);
                 }
                 searchView = (SearchView) menuItem.getActionView();
@@ -196,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
                         searchView.clearFocus();
                         return false;
                     }
+
                     @Override
                     public boolean onQueryTextChange(String newText) {
                         arrayAdapter = new ArrayAdapter<>(MainActivity.this, R.layout.list_item, cityList);
@@ -233,6 +266,7 @@ public class MainActivity extends AppCompatActivity {
 
     private class SearchSuggestionsList extends AsyncTask<Void, Void, List<String>> {
 
+        //Reads the cityList.gzip file in the raw resource files and loads it into cityList as a List<String>
         @Override
         protected List<String> doInBackground(Void... voids) {
             cityList = new ArrayList<>();
@@ -242,10 +276,12 @@ public class MainActivity extends AppCompatActivity {
                 GZIPInputStream gzipInputStream = new GZIPInputStream(is);
                 InputStreamReader reader = new InputStreamReader(gzipInputStream);
                 BufferedReader bufferedReader = new BufferedReader(reader);
-                String lineRead;
-                while ((lineRead = bufferedReader.readLine()) != null) {
+                String lineRead = bufferedReader.readLine();
+                while (lineRead != null) {
                     builder.append(lineRead);
-                    cityList = new Gson().fromJson(builder.toString(), new TypeToken<List<String>>(){}.getType());
+                    cityList = new Gson().fromJson(builder.toString(), new TypeToken<List<String>>() {
+                    }.getType());
+                    lineRead = bufferedReader.readLine();
                 }
 
             } catch (IOException e) {

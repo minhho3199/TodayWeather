@@ -71,23 +71,9 @@ public class ForecastFragment extends Fragment {
         return itemView;
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-    }
-
     public void onDestroy() {
         compositeDisposable.clear();
         super.onDestroy();
-    }
-
-    @Override
-    public void onResume() {
-        getForecastWeatherInformationByCityName("london");
-        super.onResume();
-
-
     }
 
     @Override

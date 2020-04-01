@@ -62,6 +62,7 @@ public class TodayWeatherFragment extends Fragment {
     public TodayWeatherFragment() {
         compositeDisposable = new CompositeDisposable();
         Retrofit retrofit = RetrofitClient.getInstance();
+        //Retrofit generates an implementation of the OpenWeatherMap interface
         mService = retrofit.create(IOpenWeatherMap.class);
     }
 
@@ -70,7 +71,6 @@ public class TodayWeatherFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View itemView = inflater.inflate(R.layout.fragment_today_weather, container, false);
-
         img_weather = itemView.findViewById(R.id.img_weather);
         txt_city_name = itemView.findViewById(R.id.txt_city_name);
         txt_humidity = itemView.findViewById(R.id.txt_humidity);
@@ -90,18 +90,10 @@ public class TodayWeatherFragment extends Fragment {
         return itemView;
     }
 
-    @Override
-    public void onResume() {
-
-        super.onResume();
-
-    }
 
     public void getWeatherInformationByCity(String cityName) {
-        compositeDisposable.add(mService.getWeatherByCityName(
-                cityName,
-                Common.APP_ID,
-                "metric")
+        compositeDisposable.add(
+                mService.getWeatherByCityName(cityName, Common.APP_ID,"metric")
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<WeatherResult>() {
@@ -117,18 +109,25 @@ public class TodayWeatherFragment extends Fragment {
                     }
                 }));
     }
+
     public void getWeatherInformationByLatLong() {
-        compositeDisposable.add(mService.getWeatherByLatLong(
+        //This adds the whole Observable to a CompositeDisposable object so that the Observers can be removed from
+        //the Observable when it is no longer needed
+        compositeDisposable.add(
+                mService.getWeatherByLatLong(
                 String.valueOf(Common.CURRENT_LOCATION.getLatitude()),
                 String.valueOf(Common.CURRENT_LOCATION.getLongitude()),
                 Common.APP_ID,
                 "metric")
+                //This method tells the observer what thread to do the work on, in this case is the Schedulers.io thread
                 .subscribeOn(Schedulers.io())
+                //This method tells the observer what thread to display the results on, in this case is the main thread
                 .observeOn(AndroidSchedulers.mainThread())
+                //Consumer is an alternative to Observers that accepts a single value, which in this case is weatherResult
+                //The subscribe method returns a Disposable object so that it can be added to CompositeDisposable
                 .subscribe(new Consumer<WeatherResult>() {
                     @Override
                     public void accept(WeatherResult weatherResult) throws Exception {
-                        //Load image
                         displayWeatherInfo(weatherResult);
                     }
                 }, new Consumer<Throwable>() {
